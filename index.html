@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multiplayer Style Car Racing</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#111;
+    overflow:hidden;
+}
+
+.gameArea{
+    width:420px;
+    height:100vh;
+    margin:auto;
+    background:#555;
+    position:relative;
+    overflow:hidden;
+    border-left:8px solid white;
+    border-right:8px solid white;
+}
+
+/* Road Lines */
+.line{
+    width:10px;
+    height:100px;
+    background:white;
+    position:absolute;
+    left:205px;
+}
+
+/* Player Car */
+.car{
+    width:60px;
+    height:110px;
+    position:absolute;
+    bottom:20px;
+    left:170px;
+    border-radius:12px;
+    background:red;
+    z-index:5;
+}
+
+.car::before{
+    content:"";
+    position:absolute;
+    width:40px;
+    height:25px;
+    background:skyblue;
+    top:15px;
+    left:10px;
+    border-radius:5px;
+}
+
+/* Opponent Cars */
+.opponent{
+    width:60px;
+    height:110px;
+    position:absolute;
+    border-radius:12px;
+}
+
+.opponent::before{
+    content:"";
+    position:absolute;
+    width:40px;
+    height:25px;
+    background:#ddd;
+    top:15px;
+    left:10px;
+    border-radius:5px;
+}
+
+/* HUD */
+.score{
+    position:fixed;
+    top:20px;
+    left:20px;
+    color:white;
+    font-size:28px;
+    font-weight:bold;
+    z-index:100;
+}
+
+.level{
+    position:fixed;
+    top:60px;
+    left:20px;
+    color:white;
+    font-size:22px;
+    z-index:100;
+}
+
+/* Start Screen */
+.startScreen{
+    position:absolute;
+    inset:0;
+    background:black;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    text-align:center;
+    z-index:200;
+    cursor:pointer;
+    padding:20px;
+}
+
+.startScreen h1{
+    margin-bottom:15px;
+}
+
+.controls{
+    margin-top:10px;
+    color:#ccc;
+    line-height:1.6;
+}
+</style>
+</head>
+
+<body>
+
+<div class="score">Score: 0</div>
+<div class="level">Speed: 5</div>
+
+<div class="gameArea">
+
+    <div class="startScreen">
+        <h1>🏁 Car Racing Battle</h1>
+        <p>Click To Start</p>
+
+        <div class="controls">
+            ⬅ Left Arrow = Move Left <br>
+            ➡ Right Arrow = Move Right
+        </div>
+    </div>
+
+</div>
+
+<script>
+const gameArea = document.querySelector(".gameArea");
+const startScreen = document.querySelector(".startScreen");
+const scoreBox = document.querySelector(".score");
+const levelBox = document.querySelector(".level");
+
+let player = {
+    speed:5,
+    score:0,
+    start:false,
+    x:170
+};
+
+let keys = {
+    ArrowLeft:false,
+    ArrowRight:false
+};
+
+document.addEventListener("keydown", keyDown);
+document.addEventListener("keyup", keyUp);
+
+function keyDown(e){
+    keys[e.key] = true;
+}
+
+function keyUp(e){
+    keys[e.key] = false;
+}
+
+startScreen.addEventListener("click", startGame);
+
+function startGame(){
+
+    gameArea.innerHTML = "";
+
+    player.start = true;
+    player.score = 0;
+    player.speed = 5;
+
+    // Create Road Lines
+    for(let i=0; i<6; i++){
+
+        let line = document.createElement("div");
+        line.setAttribute("class","line");
+
+        line.y = i * 150;
+
+        line.style.top = line.y + "px";
+
+        gameArea.appendChild(line);
+    }
+
+    // Create Player Car
+    let car = document.createElement("div");
+    car.setAttribute("class","car");
+
+    gameArea.appendChild(car);
+
+    // Create Opponent Cars
+    for(let i=0; i<5; i++){
+
+        let opponent = document.createElement("div");
+
+        opponent.setAttribute("class","opponent");
+
+        opponent.y = ((i + 1) * 250) * -1;
+
+        opponent.style.top = opponent.y + "px";
+
+        opponent.style.left =
+            Math.floor(Math.random() * 340) + "px";
+
+        opponent.style.background =
+            `hsl(${Math.random()*360},70%,50%)`;
+
+        gameArea.appendChild(opponent);
+    }
+
+    window.requestAnimationFrame(playGame);
+}
+
+function moveLines(){
+
+    let lines = document.querySelectorAll(".line");
+
+    lines.forEach(function(item){
+
+        if(item.y >= 700){
+            item.y -= 900;
+        }
+
+        item.y += player.speed;
+
+        item.style.top = item.y + "px";
+    });
+}
+
+function isCollide(a,b){
+
+    aRect = a.getBoundingClientRect();
+    bRect = b.getBoundingClientRect();
+
+    return !(
+        aRect.bottom < bRect.top ||
+        aRect.top > bRect.bottom ||
+        aRect.right < bRect.left ||
+        aRect.left > bRect.right
+    );
+}
+
+function moveOpponents(car){
+
+    let opponents =
+        document.querySelectorAll(".opponent");
+
+    opponents.forEach(function(item){
+
+        if(isCollide(car,item)){
+            endGame();
+        }
+
+        if(item.y >= 750){
+
+            item.y = -300;
+
+            item.style.left =
+                Math.floor(Math.random() * 340) + "px";
+
+            item.style.background =
+                `hsl(${Math.random()*360},70%,50%)`;
+        }
+
+        item.y += player.speed + 2;
+
+        item.style.top = item.y + "px";
+    });
+}
+
+function playGame(){
+
+    let car = document.querySelector(".car");
+
+    if(player.start){
+
+        moveLines();
+        moveOpponents(car);
+
+        // Move Left
+        if(keys.ArrowLeft && player.x > 0){
+            player.x -= player.speed * 2;
+        }
+
+        // Move Right
+        if(keys.ArrowRight && player.x < 360){
+            player.x += player.speed * 2;
+        }
+
+        car.style.left = player.x + "px";
+
+        // Increase Score
+        player.score++;
+
+        // Increase Difficulty
+        if(player.score % 500 === 0){
+            player.speed += 1;
+        }
+
+        scoreBox.innerHTML =
+            "Score: " + player.score;
+
+        levelBox.innerHTML =
+            "Speed: " + player.speed;
+
+        window.requestAnimationFrame(playGame);
+    }
+}
+
+function endGame(){
+
+    player.start = false;
+
+    startScreen.innerHTML = `
+        <h1>💥 Game Over</h1>
+        <p>Your Score: ${player.score}</p>
+        <br>
+        <p>Click To Restart</p>
+    `;
+
+    gameArea.appendChild(startScreen);
+}
+</script>
+
+</body>
+</html>
