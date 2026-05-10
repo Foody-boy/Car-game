@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Neon Highway Racing</title>
 
 <style>
@@ -23,7 +23,7 @@ body{
     height:100vh;
 }
 
-/* MOVING CITY BACKGROUND */
+/* STAR BACKGROUND */
 .sky{
     position:fixed;
     inset:0;
@@ -50,6 +50,7 @@ body{
     display:flex;
     justify-content:center;
     align-items:center;
+    gap:20px;
     height:100vh;
 }
 
@@ -70,7 +71,7 @@ body{
     box-shadow:0 0 40px #00f7ff;
 }
 
-/* ROAD */
+/* ROAD LINES */
 .line{
     width:10px;
     height:120px;
@@ -80,7 +81,7 @@ body{
     box-shadow:0 0 10px white;
 }
 
-/* PLAYER */
+/* PLAYER CAR */
 .car{
     width:60px;
     height:110px;
@@ -107,7 +108,7 @@ body{
     border-radius:5px;
 }
 
-/* ENEMIES */
+/* ENEMY CARS */
 .enemy{
     width:60px;
     height:110px;
@@ -244,16 +245,17 @@ body{
     box-shadow:0 0 20px gold;
 }
 
-/* SWIPE AREA */
-.swipeArea{
-    position:fixed;
-    inset:0;
-    z-index:50;
+/* DEFAULT = HIDE TOUCH CONTROLS */
+.controls{
     display:none;
 }
 
-/* ONLY MOBILE */
-@media(max-width:900px){
+/* SHOW CONTROLS ON TOUCH-FIRST DEVICES */
+@media (hover:none), (pointer:coarse){
+
+    .mainContainer{
+        gap:12px;
+    }
 
     .gameArea{
         width:320px;
@@ -263,8 +265,56 @@ body{
         left:155px;
     }
 
-    .swipeArea{
-        display:block;
+    .controls{
+        display:flex !important;
+        justify-content:center;
+        align-items:center;
+    }
+
+    .pad{
+        display:grid;
+        grid-template-columns:80px 80px 80px;
+        grid-template-rows:80px 80px;
+        gap:10px;
+    }
+
+    .controlBtn{
+        border:none;
+        border-radius:18px;
+        font-size:32px;
+        font-weight:bold;
+        background:rgba(255,255,255,0.25);
+        color:white;
+        backdrop-filter:blur(5px);
+        box-shadow:0 0 15px cyan;
+        cursor:pointer;
+    }
+
+    .up{
+        grid-column:2;
+    }
+
+    .left{
+        grid-column:1;
+        grid-row:2;
+    }
+
+    .down{
+        grid-column:2;
+        grid-row:2;
+    }
+
+    .right{
+        grid-column:3;
+        grid-row:2;
+    }
+}
+
+/* HIDE ON LAPTOPS/DESKTOPS */
+@media (hover:hover) and (pointer:fine){
+
+    .controls{
+        display:none !important;
     }
 }
 </style>
@@ -272,18 +322,13 @@ body{
 
 <body>
 
-<!-- BACKGROUND -->
+<!-- STAR SKY -->
 <div class="sky" id="sky"></div>
 
 <!-- HUD -->
 <div class="score">Score: 0</div>
 <div class="highScore">High Score: 0</div>
 <div class="speed">Speed: 5</div>
-
-<!-- LEVEL UP -->
-<div class="levelPopup" id="levelPopup">
-    🚀 SPEED BOOST!
-</div>
 
 <div class="mainContainer">
 
@@ -297,15 +342,15 @@ body{
             <br>
 
             <p>
-                💻 Computer:<br>
+                💻 Laptop / Computer:<br>
                 Use Arrow Keys
             </p>
 
             <br>
 
             <p>
-                📱 Mobile:<br>
-                Swipe Left / Right
+                📱 Tablets / Smartboards / Touch Devices:<br>
+                Use Side Controls
             </p>
 
             <br>
@@ -316,10 +361,33 @@ body{
 
     </div>
 
+    <!-- TOUCH CONTROLS -->
+    <div class="controls">
+
+        <div class="pad">
+
+            <button class="controlBtn up"
+            id="upBtn">⬆</button>
+
+            <button class="controlBtn left"
+            id="leftBtn">⬅</button>
+
+            <button class="controlBtn down"
+            id="downBtn">⬇</button>
+
+            <button class="controlBtn right"
+            id="rightBtn">➡</button>
+
+        </div>
+
+    </div>
+
 </div>
 
-<!-- SWIPE AREA -->
-<div class="swipeArea" id="swipeArea"></div>
+<!-- LEVEL POPUP -->
+<div class="levelPopup" id="levelPopup">
+🚀 SPEED BOOST!
+</div>
 
 <!-- GAME OVER -->
 <div class="popup" id="gameOverPopup">
@@ -340,22 +408,10 @@ body{
 
 </div>
 
-<!-- PAUSE POPUP -->
-<div class="popup" id="pausePopup">
-
-    <div class="popupBox">
-
-        <h1>⏸ GAME PAUSED</h1>
-
-        <p>Press P Again To Continue</p>
-
-    </div>
-
-</div>
-
 <script>
-/* STARS */
-const sky = document.getElementById("sky");
+/* STAR GENERATOR */
+const sky =
+document.getElementById("sky");
 
 for(let i=0;i<120;i++){
 
@@ -398,17 +454,11 @@ document.getElementById("levelPopup");
 const gameOverPopup =
 document.getElementById("gameOverPopup");
 
-const pausePopup =
-document.getElementById("pausePopup");
-
 const finalScore =
 document.getElementById("finalScore");
 
 const bestScore =
 document.getElementById("bestScore");
-
-const swipeArea =
-document.getElementById("swipeArea");
 
 /* HIGH SCORE */
 let highScore =
@@ -422,8 +472,7 @@ let player = {
     speed:5,
     score:0,
     start:false,
-    x:170,
-    paused:false
+    x:170
 };
 
 /* KEYS */
@@ -434,62 +483,48 @@ let keys = {
     ArrowDown:false
 };
 
-/* KEYBOARD */
+/* KEYBOARD CONTROLS */
 document.addEventListener("keydown", e=>{
-
     keys[e.key] = true;
-
-    /* PAUSE */
-    if(e.key.toLowerCase() === "p"){
-
-        player.paused = !player.paused;
-
-        pausePopup.style.display =
-        player.paused ? "flex" : "none";
-
-        if(!player.paused){
-            window.requestAnimationFrame(
-                playGame
-            );
-        }
-    }
 });
 
 document.addEventListener("keyup", e=>{
     keys[e.key] = false;
 });
 
-/* SWIPE CONTROLS */
-let startX = 0;
+/* TOUCH CONTROLS */
+function mobileControl(btn,key){
 
-swipeArea.addEventListener(
-"touchstart", e=>{
+    btn.addEventListener("touchstart", ()=>{
+        keys[key] = true;
+    });
 
-    startX =
-    e.touches[0].clientX;
-});
+    btn.addEventListener("touchend", ()=>{
+        keys[key] = false;
+    });
+}
 
-swipeArea.addEventListener(
-"touchmove", e=>{
+mobileControl(
+document.getElementById("leftBtn"),
+"ArrowLeft"
+);
 
-    let moveX =
-    e.touches[0].clientX;
+mobileControl(
+document.getElementById("rightBtn"),
+"ArrowRight"
+);
 
-    let diff =
-    moveX - startX;
+mobileControl(
+document.getElementById("upBtn"),
+"ArrowUp"
+);
 
-    if(diff > 40){
-        player.x += 10;
-    }
+mobileControl(
+document.getElementById("downBtn"),
+"ArrowDown"
+);
 
-    if(diff < -40){
-        player.x -= 10;
-    }
-
-    startX = moveX;
-});
-
-/* START */
+/* START GAME */
 startScreen.addEventListener(
 "click",
 startGame
@@ -505,8 +540,6 @@ function startGame(){
 
     player.start = true;
 
-    player.paused = false;
-
     player.score = 0;
 
     player.speed = 5;
@@ -515,7 +548,7 @@ function startGame(){
 
     gameArea.innerHTML = "";
 
-    /* ROAD LINES */
+    /* ROAD */
     for(let i=0;i<6;i++){
 
         let line =
@@ -532,7 +565,7 @@ function startGame(){
         gameArea.appendChild(line);
     }
 
-    /* PLAYER */
+    /* PLAYER CAR */
     let car =
     document.createElement("div");
 
@@ -541,7 +574,7 @@ function startGame(){
 
     gameArea.appendChild(car);
 
-    /* ENEMIES */
+    /* ENEMY CARS */
     for(let i=0;i<5;i++){
 
         let enemy =
@@ -640,23 +673,22 @@ function moveEnemies(car){
     });
 }
 
-/* MAIN LOOP */
+/* MAIN GAME LOOP */
 function playGame(){
 
-    if(!player.start ||
-    player.paused) return;
+    if(!player.start) return;
 
     let car =
     document.querySelector(".car");
 
-    /* ACCELERATE */
+    /* ACCELERATION */
     if(keys.ArrowUp &&
     player.speed < 16){
 
         player.speed += 0.05;
     }
 
-    /* BRAKE */
+    /* BRAKES */
     if(keys.ArrowDown &&
     player.speed > 2){
 
