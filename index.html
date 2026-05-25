@@ -228,23 +228,6 @@ body{
     }
 }
 
-/* LEVEL POPUP */
-.levelPopup{
-    position:fixed;
-    top:150px;
-    left:50%;
-    transform:translateX(-50%);
-    background:gold;
-    color:black;
-    padding:15px 30px;
-    border-radius:15px;
-    font-size:28px;
-    font-weight:bold;
-    display:none;
-    z-index:400;
-    box-shadow:0 0 20px gold;
-}
-
 /* DEFAULT = HIDE TOUCH CONTROLS */
 .controls{
     display:none;
@@ -384,11 +367,6 @@ body{
 
 </div>
 
-<!-- LEVEL POPUP -->
-<div class="levelPopup" id="levelPopup">
-🚀 SPEED BOOST!
-</div>
-
 <!-- GAME OVER -->
 <div class="popup" id="gameOverPopup">
 
@@ -447,9 +425,6 @@ document.querySelector(".speed");
 
 const highScoreBox =
 document.querySelector(".highScore");
-
-const levelPopup =
-document.getElementById("levelPopup");
 
 const gameOverPopup =
 document.getElementById("gameOverPopup");
@@ -681,18 +656,27 @@ function playGame(){
     let car =
     document.querySelector(".car");
 
-    /* ACCELERATION */
-    if(keys.ArrowUp &&
-    player.speed < 16){
+    /* AUTO SPEED INCREASE */
+    player.speed =
+    5 + (player.score / 1500);
 
-        player.speed += 0.05;
+    /* MAX SPEED */
+    if(player.speed > 20){
+        player.speed = 20;
+    }
+
+    /* EXTRA ACCELERATION */
+    if(keys.ArrowUp &&
+    player.speed < 22){
+
+        player.speed += 0.08;
     }
 
     /* BRAKES */
     if(keys.ArrowDown &&
     player.speed > 2){
 
-        player.speed -= 0.08;
+        player.speed -= 0.12;
     }
 
     moveLines();
@@ -721,18 +705,6 @@ function playGame(){
     /* SCORE */
     player.score +=
     Math.floor(player.speed);
-
-    /* LEVEL POPUP */
-    if(player.score % 1000 < 20){
-
-        levelPopup.style.display =
-        "block";
-
-        setTimeout(()=>{
-            levelPopup.style.display =
-            "none";
-        },1000);
-    }
 
     scoreBox.innerHTML =
     "Score: " + player.score;
